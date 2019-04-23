@@ -11,6 +11,7 @@ using System.Windows.Forms;
 using Emgu.CV;
 using Emgu.CV.Face;
 using Emgu.CV.Structure;
+using Emgu.CV.Util;
 
 namespace FacialRecognitionApp
 {
@@ -78,12 +79,12 @@ namespace FacialRecognitionApp
 
                 if (FaceSquare)
                     foreach (var face in faces)
-                        ImageFrame.Draw(face, new Bgr(Color.BurlyWood), 3);
+                        ImageFrame.Draw(face, new Bgr(Color.LimeGreen), 3);
                 
 
                 if (EyeSquare)
                     foreach (var eye in eyes)
-                        ImageFrame.Draw(eye, new Bgr(Color.Yellow), 3);
+                        ImageFrame.Draw(eye, new Bgr(Color.Red), 3);
 
                 WebcamBox.Image = ImageFrame.ToBitmap();
             }
@@ -96,7 +97,7 @@ namespace FacialRecognitionApp
             else
                 EyeButton.Text = "Eye Square: On";
 
-            FaceSquare = !FaceSquare;
+            EyeSquare = !EyeSquare;
         }
 
         private void SquareButton_Click(object sender, EventArgs e)
@@ -175,7 +176,7 @@ namespace FacialRecognitionApp
             }
             else
             {
-                FaceRecognition.Train(Faces.ToArray(), IDs.ToArray());
+                //FaceRecognition.Train(new VectorOfMat(Faces.ToArray()), new VectorOfInt(IDs.ToArray()));
                 FaceRecognition.Write(YMLPath);
                 Timer.Stop();
                 TimerCounter = 0;
