@@ -24,7 +24,7 @@ namespace FacialRecognitionApp
 
         public Mat Frame { get; set; }
 
-        public List<Image<Gray, byte>> Faces { get; set; }
+        public List<Mat> Faces { get; set; }
         public List<int> IDs { get; set; }
 
         public int ProcessedImageWidth { get; set; } = 128;
@@ -49,7 +49,7 @@ namespace FacialRecognitionApp
             FaceDetection = new CascadeClassifier(System.IO.Path.GetFullPath(@"../../Algo/haarcascade_frontalface_default.xml"));
             EyeDetection = new CascadeClassifier(System.IO.Path.GetFullPath(@"../../Algo/haarcascade_eye.xml"));
             Frame = new Mat();
-            Faces = new List<Image<Gray, byte>>();
+            Faces = new List<Mat>();
             IDs = new List<int>();
             BeginWebcam();
         }
@@ -80,6 +80,7 @@ namespace FacialRecognitionApp
                 if (FaceSquare)
                     foreach (var face in faces)
                         ImageFrame.Draw(face, new Bgr(Color.LimeGreen), 3);
+                        
                 
 
                 if (EyeSquare)
@@ -119,16 +120,19 @@ namespace FacialRecognitionApp
             {
                 var faces = FaceDetection.DetectMultiScale(imageFrame, 1.3, 5);
 
-                if (faces.Count() != 0)
+                if (faces.Any())
                 {
-                    var processedImage = imageFrame.Copy(faces[0]).Resize(ProcessedImageWidth, ProcessedImageHeight,
-                        Emgu.CV.CvEnum.Inter.Cubic);
+                    Image<Gray, byte> processedImage = imageFrame.Copy(faces[0]).Resize(ProcessedImageWidth, ProcessedImageHeight, Emgu.CV.CvEnum.Inter.Cubic);
                     var result = FaceRecognition.Predict(processedImage);
-
-                    if (result.Label.ToString() == "15")
-                        MessageBox.Show("Your Name");
+                    
+                    if (result.Label.ToString() == "15") { 
+                        MessageBox.Show($"This is, Michael!");
+                    }
+                    else if (result.Label.ToString() == "13") { 
+                        MessageBox.Show($"This is, Louise!");
+                    }
                     else
-                        MessageBox.Show("Your Friend");
+                        MessageBox.Show($"I dont know this person");
                 }
                 else
                     MessageBox.Show("Face was not found - try again");
@@ -147,6 +151,7 @@ namespace FacialRecognitionApp
                 Timer.Tick += Timer_Tick;
                 Timer.Start();
                 TrainButton.Enabled = !TrainButton.Enabled;
+                
             }
         }
 
@@ -161,12 +166,12 @@ namespace FacialRecognitionApp
 
                 if (imageFrame != null)
                 {
-                    var faces = FaceDetection.DetectMultiScale(imageFrame, 1.3, 5);
+                    Rectangle[] faces = FaceDetection.DetectMultiScale(imageFrame, 1.3, 5);
 
-                    if (faces.Count() > 0)
+                    if (faces.Any())
                     {
                         var processedImage = imageFrame.Copy(faces[0]).Resize(ProcessedImageWidth, ProcessedImageHeight, Emgu.CV.CvEnum.Inter.Cubic);
-                        Faces.Add(processedImage);
+                        Faces.Add(processedImage.Mat);
                         IDs.Add(Convert.ToInt32(IDBox.Text));
                         ScanCounter++;
                         OutputBox.AppendText($"{ScanCounter} Successful Scans Taken...{Environment.NewLine}");
@@ -176,10 +181,11 @@ namespace FacialRecognitionApp
             }
             else
             {
-                //FaceRecognition.Train(new VectorOfMat(Faces.ToArray()), new VectorOfInt(IDs.ToArray()));
+                FaceRecognition.Train(new VectorOfMat(Faces.ToArray()), new VectorOfInt(IDs.ToArray()));
                 FaceRecognition.Write(YMLPath);
                 Timer.Stop();
                 TimerCounter = 0;
+                IDBox.Clear();
                 TrainButton.Enabled = !TrainButton.Enabled;
                 IDBox.Enabled = !IDBox.Enabled;
                 OutputBox.AppendText($"Training Complete! {Environment.NewLine}");
