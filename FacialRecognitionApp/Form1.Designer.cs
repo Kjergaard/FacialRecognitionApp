@@ -38,6 +38,8 @@
             this.SquareButton = new System.Windows.Forms.Button();
             this.EyeButton = new System.Windows.Forms.Button();
             this.PredictButton = new System.Windows.Forms.Button();
+            this.label2 = new System.Windows.Forms.Label();
+            this.nameBox = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.WebcamBox)).BeginInit();
             this.SuspendLayout();
             // 
@@ -51,14 +53,14 @@
             // 
             // IDBox
             // 
-            this.IDBox.Location = new System.Drawing.Point(710, 47);
+            this.IDBox.Location = new System.Drawing.Point(710, 28);
             this.IDBox.Name = "IDBox";
             this.IDBox.Size = new System.Drawing.Size(222, 20);
             this.IDBox.TabIndex = 1;
             // 
             // TrainButton
             // 
-            this.TrainButton.Location = new System.Drawing.Point(710, 76);
+            this.TrainButton.Location = new System.Drawing.Point(710, 93);
             this.TrainButton.Name = "TrainButton";
             this.TrainButton.Size = new System.Drawing.Size(222, 34);
             this.TrainButton.TabIndex = 2;
@@ -86,7 +88,7 @@
             // lbl_ID
             // 
             this.lbl_ID.AutoSize = true;
-            this.lbl_ID.Location = new System.Drawing.Point(710, 31);
+            this.lbl_ID.Location = new System.Drawing.Point(710, 12);
             this.lbl_ID.Name = "lbl_ID";
             this.lbl_ID.Size = new System.Drawing.Size(71, 13);
             this.lbl_ID.TabIndex = 5;
@@ -131,11 +133,29 @@
             this.PredictButton.UseVisualStyleBackColor = true;
             this.PredictButton.Click += new System.EventHandler(this.PredictButton_Click);
             // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(710, 51);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(88, 13);
+            this.label2.TabIndex = 11;
+            this.label2.Text = "Enter Your Name";
+            // 
+            // nameBox
+            // 
+            this.nameBox.Location = new System.Drawing.Point(710, 67);
+            this.nameBox.Name = "nameBox";
+            this.nameBox.Size = new System.Drawing.Size(222, 20);
+            this.nameBox.TabIndex = 10;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(950, 536);
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.nameBox);
             this.Controls.Add(this.PredictButton);
             this.Controls.Add(this.EyeButton);
             this.Controls.Add(this.SquareButton);
@@ -166,6 +186,8 @@
         private System.Windows.Forms.Button SquareButton;
         private System.Windows.Forms.Button EyeButton;
         private System.Windows.Forms.Button PredictButton;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.TextBox nameBox;
     }
 }
 

@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
 using Emgu.CV;
+using Emgu.CV.CvEnum;
 using Emgu.CV.Face;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
@@ -21,11 +23,15 @@ namespace FacialRecognitionApp
         public EigenFaceRecognizer FaceRecognition { get; set; }
         public CascadeClassifier FaceDetection { get; set; }
         public CascadeClassifier EyeDetection { get; set; }
+        public FaceRecognizer.PredictionResult result { get; set; }
+
 
         public Mat Frame { get; set; }
 
         public List<Mat> Faces { get; set; }
         public List<int> IDs { get; set; }
+        public List<string> listOfNames { get; set; }
+        public List<int> listOfIds { get; set; }
 
         public int ProcessedImageWidth { get; set; } = 128;
         public int ProcessedImageHeight { get; set; } = 150;
@@ -40,6 +46,9 @@ namespace FacialRecognitionApp
 
         public bool FaceSquare { get; set; } = false;
         public bool EyeSquare { get; set; } = false;
+        public bool doneTraining { get; set; } = false;
+
+        
 
         public Form1()
         {
@@ -51,6 +60,8 @@ namespace FacialRecognitionApp
             Frame = new Mat();
             Faces = new List<Mat>();
             IDs = new List<int>();
+            listOfNames = new List<string>();
+            listOfIds = new List<int>();
             BeginWebcam();
         }
 
@@ -66,7 +77,7 @@ namespace FacialRecognitionApp
             OutputBox.AppendText($"Webcam Started...{Environment.NewLine}");
         }
 
-        private void Webcam_ImageGrabbed(object sender, EventArgs e)
+        public void Webcam_ImageGrabbed(object sender, EventArgs e)
         {
             Webcam.Retrieve(Frame);
             var ImageFrame = Frame.ToImage<Bgr, byte>();
@@ -77,26 +88,57 @@ namespace FacialRecognitionApp
                 var faces = FaceDetection.DetectMultiScale(grayFrame, 1.3, 5);
                 var eyes = EyeDetection.DetectMultiScale(grayFrame, 1.3, 5);
 
-                if (FaceSquare)
+
+                if (!TrainButton.Enabled)
                     foreach (var face in faces)
                         ImageFrame.Draw(face, new Bgr(Color.LimeGreen), 3);
+
+
+
+                if (FaceSquare)
+                    foreach (var face in faces)
+                    { 
+                        ImageFrame.Draw(face, new Bgr(Color.LimeGreen), 3);
                         
-                
+                        
+                        //TODO draw decicion ID on rectancle   
+                        Graphics graphicImage = Graphics.FromImage(ImageFrame.Bitmap);
+                        graphicImage.DrawString(result.Label.ToString(),
+                                                new Font("Arial", 
+                                                12, FontStyle.Bold),
+                                                SystemBrushes.WindowText,
+                                                new Point(face.X,face.Y));
+                    }
 
                 if (EyeSquare)
                     foreach (var eye in eyes)
                         ImageFrame.Draw(eye, new Bgr(Color.Red), 3);
+               
 
                 WebcamBox.Image = ImageFrame.ToBitmap();
             }
         }
 
+        public string NamePrediction(string id)
+        {
+            switch (id)
+            {
+                case "":
+                    return listOfNames[0];
+                    break;
+
+
+            }
+
+            return id.ToString();
+        }
+
         private void EyeButton_Click(object sender, EventArgs e)
         {
             if (EyeSquare)
-                EyeButton.Text = "Eye Square: Off";
+                EyeButton.Text = "Eye Square: OFF";
             else
-                EyeButton.Text = "Eye Square: On";
+                EyeButton.Text = "Eye Square: ON";
 
             EyeSquare = !EyeSquare;
         }
@@ -104,54 +146,65 @@ namespace FacialRecognitionApp
         private void SquareButton_Click(object sender, EventArgs e)
         {
             if (FaceSquare)
-                SquareButton.Text = "Face Square: Off";
+                SquareButton.Text = "Face Square: OFF";
             else
-                SquareButton.Text = "Face Square: On";
+                SquareButton.Text = "Face Square: ON";
 
             FaceSquare = !FaceSquare;
         }
 
-        private void PredictButton_Click(object sender, EventArgs e)
+        public void PredictButton_Click(object sender, EventArgs e)
         {
             Webcam.Retrieve(Frame);
             var imageFrame = Frame.ToImage<Gray, byte>();
+            
 
             if (imageFrame != null)
             {
                 var faces = FaceDetection.DetectMultiScale(imageFrame, 1.3, 5);
-
+                
                 if (faces.Any())
                 {
-                    Image<Gray, byte> processedImage = imageFrame.Copy(faces[0]).Resize(ProcessedImageWidth, ProcessedImageHeight, Emgu.CV.CvEnum.Inter.Cubic);
-                    var result = FaceRecognition.Predict(processedImage);
                     
-                    if (result.Label.ToString() == "15") { 
-                        MessageBox.Show($"This is, Michael!");
+                    Image<Gray, byte> processedImage = imageFrame.Copy(faces[0]).Resize(ProcessedImageWidth, ProcessedImageHeight, Emgu.CV.CvEnum.Inter.Cubic);
+                    result = FaceRecognition.Predict(processedImage);
+                    
+                    
+                    
+                    if (result.Label == listOfIds.IndexOf(result.Label)+1)
+                    {
+                        MessageBox.Show($"This is, " + listOfNames[result.Label-1]);
+                        
                     }
-                    else if (result.Label.ToString() == "13") { 
-                        MessageBox.Show($"This is, Louise!");
-                    }
+                    //TODO - else virker ikke.
                     else
                         MessageBox.Show($"I dont know this person");
+
+
                 }
                 else
                     MessageBox.Show("Face was not found - try again");
             }
-            
         }
 
         private void TrainButton_Click(object sender, EventArgs e)
         {
-            if (IDBox.Text != string.Empty)
+            if (IDBox.Text != string.Empty && nameBox.Text != string.Empty)
             {
                 IDBox.Enabled = !IDBox.Enabled;
+                nameBox.Enabled = !nameBox.Enabled;
+
+                listOfNames.Add(nameBox.Text);
+                listOfIds.Add(Convert.ToInt32(IDBox.Text));
 
                 Timer = new Timer();
                 Timer.Interval = 500;
                 Timer.Tick += Timer_Tick;
                 Timer.Start();
                 TrainButton.Enabled = !TrainButton.Enabled;
+
                 
+
             }
         }
 
@@ -183,13 +236,17 @@ namespace FacialRecognitionApp
             {
                 FaceRecognition.Train(new VectorOfMat(Faces.ToArray()), new VectorOfInt(IDs.ToArray()));
                 FaceRecognition.Write(YMLPath);
+                
                 Timer.Stop();
                 TimerCounter = 0;
                 IDBox.Clear();
+                nameBox.Clear();
                 TrainButton.Enabled = !TrainButton.Enabled;
                 IDBox.Enabled = !IDBox.Enabled;
+                nameBox.Enabled = !nameBox.Enabled;
                 OutputBox.AppendText($"Training Complete! {Environment.NewLine}");
                 MessageBox.Show("Training Complete");
+                doneTraining = true;
             }
             
         }
