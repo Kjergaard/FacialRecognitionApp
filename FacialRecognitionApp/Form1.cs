@@ -95,7 +95,7 @@ namespace FacialRecognitionApp
 
 
 
-                if (FaceSquare)
+                if (doneTraining)
                     foreach (var face in faces)
                     { 
                         ImageFrame.Draw(face, new Bgr(Color.LimeGreen), 3);
@@ -105,8 +105,8 @@ namespace FacialRecognitionApp
                         Graphics graphicImage = Graphics.FromImage(ImageFrame.Bitmap);
                         graphicImage.DrawString(result.Label.ToString(),
                                                 new Font("Arial", 
-                                                12, FontStyle.Bold),
-                                                SystemBrushes.WindowText,
+                                                20, FontStyle.Bold),
+                                                new SolidBrush(Color.LimeGreen), 
                                                 new Point(face.X,face.Y));
                     }
 
@@ -121,15 +121,6 @@ namespace FacialRecognitionApp
 
         public string NamePrediction(string id)
         {
-            switch (id)
-            {
-                case "":
-                    return listOfNames[0];
-                    break;
-
-
-            }
-
             return id.ToString();
         }
 
@@ -170,11 +161,10 @@ namespace FacialRecognitionApp
                     result = FaceRecognition.Predict(processedImage);
                     
                     
-                    
                     if (result.Label == listOfIds.IndexOf(result.Label)+1)
                     {
                         MessageBox.Show($"This is, " + listOfNames[result.Label-1]);
-                        
+                            
                     }
                     //TODO - else virker ikke.
                     else
@@ -184,6 +174,7 @@ namespace FacialRecognitionApp
                 }
                 else
                     MessageBox.Show("Face was not found - try again");
+                
             }
         }
 
