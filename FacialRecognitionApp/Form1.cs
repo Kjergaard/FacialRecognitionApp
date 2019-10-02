@@ -23,7 +23,7 @@ namespace FacialRecognitionApp
         public EigenFaceRecognizer FaceRecognition { get; set; }
         public CascadeClassifier FaceDetection { get; set; }
         public CascadeClassifier EyeDetection { get; set; }
-        public FaceRecognizer.PredictionResult result { get; set; }
+        private FaceRecognizer.PredictionResult result { get; set; } 
 
 
         public Mat Frame { get; set; }
@@ -47,6 +47,7 @@ namespace FacialRecognitionApp
         public bool FaceSquare { get; set; } = false;
         public bool EyeSquare { get; set; } = false;
         public bool doneTraining { get; set; } = false;
+        public bool isPredicted { get; set; } = false;
 
         
 
@@ -72,7 +73,7 @@ namespace FacialRecognitionApp
                 Webcam = new VideoCapture();
             }
 
-            Webcam.ImageGrabbed += Webcam_ImageGrabbed;
+            Webcam.ImageGrabbed += Webcam_ImageGrabbed; // will call this every time an image is grabbed from the webcam.
             Webcam.Start();
             OutputBox.AppendText($"Webcam Started...{Environment.NewLine}");
         }
@@ -85,43 +86,52 @@ namespace FacialRecognitionApp
             if (ImageFrame != null)
             {
                 var grayFrame = ImageFrame.Convert<Gray, byte>();
-                var faces = FaceDetection.DetectMultiScale(grayFrame, 1.3, 5);
-                var eyes = EyeDetection.DetectMultiScale(grayFrame, 1.3, 5);
+                var faces = FaceDetection.DetectMultiScale(grayFrame, 1.3, 5); // Et array af firkanter, som holder alle ansigter den finder.
+                var eyes = EyeDetection.DetectMultiScale(grayFrame, 1.3, 5); // Samme med øjne
 
+                foreach (var face in faces)
+                {
+                    ImageFrame.Draw(face, new Bgr(Color.LimeGreen), 3);
 
-                if (!TrainButton.Enabled)
-                    foreach (var face in faces)
-                        ImageFrame.Draw(face, new Bgr(Color.LimeGreen), 3);
-
-
-
-                if (doneTraining)
-                    foreach (var face in faces)
-                    { 
-                        ImageFrame.Draw(face, new Bgr(Color.LimeGreen), 3);
-                        
-                        
-                        //TODO draw decicion ID on rectancle   
-                        Graphics graphicImage = Graphics.FromImage(ImageFrame.Bitmap);
-                        graphicImage.DrawString(result.Label.ToString(),
-                                                new Font("Arial", 
-                                                20, FontStyle.Bold),
-                                                new SolidBrush(Color.LimeGreen), 
-                                                new Point(face.X,face.Y));
+                    if (isPredicted)
+                    {
+                        Graphics graphicImage1 = Graphics.FromImage(ImageFrame.Bitmap);
+                        graphicImage1.DrawString(listOfNames[result.Label - 1],
+                            new Font("Arial",
+                                15, FontStyle.Bold),
+                            new SolidBrush(Color.LimeGreen),
+                            new Point(face.X, face.Y));
                     }
+                    else
+                    {
+                        Graphics graphicImage1 = Graphics.FromImage(ImageFrame.Bitmap);
+                        graphicImage1.DrawString("Unknown",
+                            new Font("Arial",
+                                15, FontStyle.Bold),
+                            new SolidBrush(Color.LimeGreen),
+                            new Point(face.X, face.Y));
+                    }
+
+                }
+
+                // ID checker
+                Graphics graphicImage = Graphics.FromImage(ImageFrame.Bitmap);
+                graphicImage.DrawString($"Face ID: " + result.Label.ToString(),
+                    new Font("Arial",
+                        15, FontStyle.Bold),
+                    new SolidBrush(Color.LimeGreen),
+                    new Point(0, 50));
+
+
+
 
                 if (EyeSquare)
                     foreach (var eye in eyes)
                         ImageFrame.Draw(eye, new Bgr(Color.Red), 3);
-               
 
-                WebcamBox.Image = ImageFrame.ToBitmap();
+
+                WebcamBox.Image = ImageFrame.ToBitmap(); // shows frames in the UI.
             }
-        }
-
-        public string NamePrediction(string id)
-        {
-            return id.ToString();
         }
 
         private void EyeButton_Click(object sender, EventArgs e)
@@ -144,39 +154,7 @@ namespace FacialRecognitionApp
             FaceSquare = !FaceSquare;
         }
 
-        public void PredictButton_Click(object sender, EventArgs e)
-        {
-            Webcam.Retrieve(Frame);
-            var imageFrame = Frame.ToImage<Gray, byte>();
-            
 
-            if (imageFrame != null)
-            {
-                var faces = FaceDetection.DetectMultiScale(imageFrame, 1.3, 5);
-                
-                if (faces.Any())
-                {
-                    
-                    Image<Gray, byte> processedImage = imageFrame.Copy(faces[0]).Resize(ProcessedImageWidth, ProcessedImageHeight, Emgu.CV.CvEnum.Inter.Cubic);
-                    result = FaceRecognition.Predict(processedImage);
-                    
-                    
-                    if (result.Label == listOfIds.IndexOf(result.Label)+1)
-                    {
-                        MessageBox.Show($"This is, " + listOfNames[result.Label-1]);
-                            
-                    }
-                    //TODO - else virker ikke.
-                    else
-                        MessageBox.Show($"I dont know this person");
-
-
-                }
-                else
-                    MessageBox.Show("Face was not found - try again");
-                
-            }
-        }
 
         private void TrainButton_Click(object sender, EventArgs e)
         {
@@ -185,16 +163,17 @@ namespace FacialRecognitionApp
                 IDBox.Enabled = !IDBox.Enabled;
                 nameBox.Enabled = !nameBox.Enabled;
 
-                listOfNames.Add(nameBox.Text);
-                listOfIds.Add(Convert.ToInt32(IDBox.Text));
+                listOfNames.Add(nameBox.Text); // Adds Name from UI to the list of user Names
+                listOfIds.Add(Convert.ToInt32(IDBox.Text)); // Adds the ID from the UI to the list of User ID's
 
                 Timer = new Timer();
-                Timer.Interval = 500;
-                Timer.Tick += Timer_Tick;
+                Timer.Interval = 500; // ticks every 0.5 sec
+                Timer.Tick += Timer_Tick; // this method gets called every time the timer fires.
                 Timer.Start();
+
                 TrainButton.Enabled = !TrainButton.Enabled;
 
-                
+
 
             }
         }
@@ -214,7 +193,7 @@ namespace FacialRecognitionApp
 
                     if (faces.Any())
                     {
-                        var processedImage = imageFrame.Copy(faces[0]).Resize(ProcessedImageWidth, ProcessedImageHeight, Emgu.CV.CvEnum.Inter.Cubic);
+                        var processedImage = imageFrame.Copy(faces[0]).Resize(ProcessedImageWidth, ProcessedImageHeight, Inter.Cubic); // Will zoom into the rectangle it finds to only see that.
                         Faces.Add(processedImage.Mat);
                         IDs.Add(Convert.ToInt32(IDBox.Text));
                         ScanCounter++;
@@ -225,21 +204,67 @@ namespace FacialRecognitionApp
             }
             else
             {
-                FaceRecognition.Train(new VectorOfMat(Faces.ToArray()), new VectorOfInt(IDs.ToArray()));
+                FaceRecognition.Train(new VectorOfMat(Faces.ToArray()), new VectorOfInt(IDs.ToArray())); // Here we finally train on face and ID collection we just captures and is written to the pathfile "YMLPath"
                 FaceRecognition.Write(YMLPath);
-                
+
                 Timer.Stop();
                 TimerCounter = 0;
+
                 IDBox.Clear();
                 nameBox.Clear();
+
                 TrainButton.Enabled = !TrainButton.Enabled;
                 IDBox.Enabled = !IDBox.Enabled;
                 nameBox.Enabled = !nameBox.Enabled;
+
                 OutputBox.AppendText($"Training Complete! {Environment.NewLine}");
-                MessageBox.Show("Training Complete");
+                //MessageBox.Show("Training Complete");
+
                 doneTraining = true;
+
+                Timer = new Timer();
+                Timer.Interval = 500; // ticks every 0.5 sec
+                Timer.Tick += Timer_Tick1; // this method gets called every time the timer fires.
+                Timer.Start();
+
+
             }
-            
+
+        }
+
+        private void Timer_Tick1(object sender, EventArgs e)
+        {
+            Webcam.Retrieve(Frame);
+            var imageFrame = Frame.ToImage<Gray, byte>();
+
+
+            if (imageFrame != null)
+            {
+                var faces = FaceDetection.DetectMultiScale(imageFrame, 1.3, 5);
+
+                if (faces.Count() != 0)
+                {
+
+                    Image<Gray, byte> processedImage = imageFrame.Copy(faces[0]).Resize(ProcessedImageWidth, ProcessedImageHeight, Inter.Cubic);
+                    result = FaceRecognition.Predict(processedImage);
+
+
+                    foreach (int id in listOfIds)
+                    {
+                        if (result.Label == id)
+                        {
+                            isPredicted = true;
+                        }
+                        else
+                            isPredicted = false;
+                    }
+                    
+                }
+                else
+                    OutputBox.AppendText($"Face not found - Try again!");
+
+
+            }
         }
     }
 }
