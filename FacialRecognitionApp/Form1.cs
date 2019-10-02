@@ -48,8 +48,11 @@ namespace FacialRecognitionApp
         public bool EyeSquare { get; set; } = false;
         public bool doneTraining { get; set; } = false;
         public bool isPredicted { get; set; } = false;
+        public bool isUnknown { get; set; } = true;
 
         
+
+
 
         public Form1()
         {
@@ -93,7 +96,7 @@ namespace FacialRecognitionApp
                 {
                     ImageFrame.Draw(face, new Bgr(Color.LimeGreen), 3);
 
-                    if (isPredicted)
+                    if (isPredicted && doneTraining)
                     {
                         Graphics graphicImage1 = Graphics.FromImage(ImageFrame.Bitmap);
                         graphicImage1.DrawString(listOfNames[result.Label - 1],
@@ -102,10 +105,11 @@ namespace FacialRecognitionApp
                             new SolidBrush(Color.LimeGreen),
                             new Point(face.X, face.Y));
                     }
-                    else
+
+                    if (!doneTraining && isUnknown)
                     {
-                        Graphics graphicImage1 = Graphics.FromImage(ImageFrame.Bitmap);
-                        graphicImage1.DrawString("Unknown",
+                        Graphics graphicImage2 = Graphics.FromImage(ImageFrame.Bitmap);
+                        graphicImage2.DrawString("Unknown",
                             new Font("Arial",
                                 15, FontStyle.Bold),
                             new SolidBrush(Color.LimeGreen),
@@ -118,7 +122,7 @@ namespace FacialRecognitionApp
                 Graphics graphicImage = Graphics.FromImage(ImageFrame.Bitmap);
                 graphicImage.DrawString($"Face ID: " + result.Label.ToString(),
                     new Font("Arial",
-                        15, FontStyle.Bold),
+                    15, FontStyle.Bold),
                     new SolidBrush(Color.LimeGreen),
                     new Point(0, 50));
 
@@ -155,11 +159,13 @@ namespace FacialRecognitionApp
         }
 
 
-
         private void TrainButton_Click(object sender, EventArgs e)
         {
             if (IDBox.Text != string.Empty && nameBox.Text != string.Empty)
             {
+                isPredicted = false;
+                isUnknown = true;
+
                 IDBox.Enabled = !IDBox.Enabled;
                 nameBox.Enabled = !nameBox.Enabled;
 
@@ -253,10 +259,11 @@ namespace FacialRecognitionApp
                     {
                         if (result.Label == id)
                         {
+                            isUnknown = false;
                             isPredicted = true;
                         }
                         else
-                            isPredicted = false;
+                            isUnknown = true;
                     }
                     
                 }
