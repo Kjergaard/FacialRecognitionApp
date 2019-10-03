@@ -90,7 +90,7 @@ namespace FacialRecognitionApp
             {
                 var grayFrame = ImageFrame.Convert<Gray, byte>();
                 var faces = FaceDetection.DetectMultiScale(grayFrame, 1.3, 5); // Et array af firkanter, som holder alle ansigter den finder.
-                var eyes = EyeDetection.DetectMultiScale(grayFrame, 1.3, 5); // Samme med øjne
+                // var eyes = EyeDetection.DetectMultiScale(grayFrame, 1.3, 5); // Samme med øjne
 
                 foreach (var face in faces)
                 {
@@ -109,7 +109,8 @@ namespace FacialRecognitionApp
                         }
                         catch (Exception exception)
                         {
-                            
+                            //No action as the error is useless, it is simply an error in
+                            //no data being there to process and this occurss sporadically
                         }
 
                     }
@@ -134,12 +135,6 @@ namespace FacialRecognitionApp
                     new SolidBrush(Color.LimeGreen),
                     new Point(0, 50));
 
-
-
-
-                if (EyeSquare)
-                    foreach (var eye in eyes)
-                        ImageFrame.Draw(eye, new Bgr(Color.Red), 3);
 
 
                 WebcamBox.Image = ImageFrame.ToBitmap(); // shows frames in the UI.
@@ -242,10 +237,7 @@ namespace FacialRecognitionApp
 
                     Image<Gray, byte> processedImage = imageFrame.Copy(faces[0]).Resize(ProcessedImageWidth, ProcessedImageHeight, Inter.Cubic);
                     result = FaceRecognition.Predict(processedImage);
-
-
-
-
+                    
                     foreach (var id in listOfIds)
                     {
                         if (result.Label == id)
