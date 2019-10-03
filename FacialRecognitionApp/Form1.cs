@@ -49,7 +49,7 @@ namespace FacialRecognitionApp
         public bool doneTraining { get; set; } = false;
         public bool isPredicted { get; set; } = false;
         public bool isUnknown { get; set; } = true;
-
+        public int userId { get; set; } = 0;
         
 
 
@@ -58,7 +58,7 @@ namespace FacialRecognitionApp
         {
             InitializeComponent();
 
-            FaceRecognition = new EigenFaceRecognizer(80, double.PositiveInfinity);
+            FaceRecognition = new EigenFaceRecognizer(80, 2500);
             FaceDetection = new CascadeClassifier(System.IO.Path.GetFullPath(@"../../Algo/haarcascade_frontalface_default.xml"));
             EyeDetection = new CascadeClassifier(System.IO.Path.GetFullPath(@"../../Algo/haarcascade_eye.xml"));
             Frame = new Mat();
@@ -96,23 +96,31 @@ namespace FacialRecognitionApp
                 {
                     ImageFrame.Draw(face, new Bgr(Color.LimeGreen), 3);
 
-                    if (isPredicted && doneTraining)
+                    if (result.Label != -1 || isPredicted && doneTraining)
                     {
-                        Graphics graphicImage1 = Graphics.FromImage(ImageFrame.Bitmap);
-                        graphicImage1.DrawString(listOfNames[result.Label - 1],
-                            new Font("Arial",
-                                15, FontStyle.Bold),
-                            new SolidBrush(Color.LimeGreen),
-                            new Point(face.X, face.Y));
+                        try
+                        {
+                            Graphics graphicImage1 = Graphics.FromImage(ImageFrame.Bitmap);
+                            graphicImage1.DrawString(listOfNames[result.Label - 1],
+                                new Font("Arial",
+                                    15, FontStyle.Bold),
+                                new SolidBrush(Color.LimeGreen),
+                                new Point(face.X, face.Y));
+                        }
+                        catch (Exception exception)
+                        {
+                            
+                        }
+
                     }
 
-                    if (!doneTraining && isUnknown)
+                    if (result.Label == 0 || result.Label == -1)
                     {
                         Graphics graphicImage2 = Graphics.FromImage(ImageFrame.Bitmap);
                         graphicImage2.DrawString("Unknown",
                             new Font("Arial",
                                 15, FontStyle.Bold),
-                            new SolidBrush(Color.LimeGreen),
+                            new SolidBrush(Color.Red),
                             new Point(face.X, face.Y));
                     }
 
@@ -138,39 +146,20 @@ namespace FacialRecognitionApp
             }
         }
 
-        private void EyeButton_Click(object sender, EventArgs e)
-        {
-            if (EyeSquare)
-                EyeButton.Text = "Eye Square: OFF";
-            else
-                EyeButton.Text = "Eye Square: ON";
-
-            EyeSquare = !EyeSquare;
-        }
-
-        private void SquareButton_Click(object sender, EventArgs e)
-        {
-            if (FaceSquare)
-                SquareButton.Text = "Face Square: OFF";
-            else
-                SquareButton.Text = "Face Square: ON";
-
-            FaceSquare = !FaceSquare;
-        }
-
-
         private void TrainButton_Click(object sender, EventArgs e)
         {
-            if (IDBox.Text != string.Empty && nameBox.Text != string.Empty)
+            //IDBox.Text != string.Empty &&
+            if (nameBox.Text != string.Empty)
             {
+                userId++;
                 isPredicted = false;
                 isUnknown = true;
 
-                IDBox.Enabled = !IDBox.Enabled;
+                //IDBox.Enabled = !IDBox.Enabled;
                 nameBox.Enabled = !nameBox.Enabled;
 
                 listOfNames.Add(nameBox.Text); // Adds Name from UI to the list of user Names
-                listOfIds.Add(Convert.ToInt32(IDBox.Text)); // Adds the ID from the UI to the list of User ID's
+                listOfIds.Add(userId); // Adds the ID from the UI to the list of User ID's
 
                 Timer = new Timer();
                 Timer.Interval = 500; // ticks every 0.5 sec
@@ -201,7 +190,7 @@ namespace FacialRecognitionApp
                     {
                         var processedImage = imageFrame.Copy(faces[0]).Resize(ProcessedImageWidth, ProcessedImageHeight, Inter.Cubic); // Will zoom into the rectangle it finds to only see that.
                         Faces.Add(processedImage.Mat);
-                        IDs.Add(Convert.ToInt32(IDBox.Text));
+                        IDs.Add(userId);
                         ScanCounter++;
                         OutputBox.AppendText($"{ScanCounter} Successful Scans Taken...{Environment.NewLine}");
                         OutputBox.ScrollToCaret();
@@ -215,12 +204,12 @@ namespace FacialRecognitionApp
 
                 Timer.Stop();
                 TimerCounter = 0;
-
-                IDBox.Clear();
+                
+                //IDBox.Clear();
                 nameBox.Clear();
 
                 TrainButton.Enabled = !TrainButton.Enabled;
-                IDBox.Enabled = !IDBox.Enabled;
+                //IDBox.Enabled = !IDBox.Enabled;
                 nameBox.Enabled = !nameBox.Enabled;
 
                 OutputBox.AppendText($"Training Complete! {Environment.NewLine}");
@@ -247,7 +236,7 @@ namespace FacialRecognitionApp
             if (imageFrame != null)
             {
                 var faces = FaceDetection.DetectMultiScale(imageFrame, 1.3, 5);
-
+                
                 if (faces.Count() != 0)
                 {
 
@@ -255,7 +244,9 @@ namespace FacialRecognitionApp
                     result = FaceRecognition.Predict(processedImage);
 
 
-                    foreach (int id in listOfIds)
+
+
+                    foreach (var id in listOfIds)
                     {
                         if (result.Label == id)
                         {
@@ -267,10 +258,6 @@ namespace FacialRecognitionApp
                     }
                     
                 }
-                else
-                    OutputBox.AppendText($"Face not found - Try again!");
-
-
             }
         }
     }
